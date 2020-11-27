@@ -73,6 +73,9 @@ public class PaintView extends View {
         mPaint.setStrokeWidth(sizeBrush);
     }
 
+    public int getSizeBrush(){
+        return this.sizeBrush;
+    }
     public void setBrushColor(int color) {
         mPaint.setColor(color);
     }
@@ -80,6 +83,10 @@ public class PaintView extends View {
     public void setSizeEraser(int s) {
         sizeEraser = s;
         mPaint.setStrokeWidth(toPx(sizeEraser));
+    }
+
+    public int getSizeEraser(){
+        return this.sizeEraser;
     }
 
     public void enableEraser() {

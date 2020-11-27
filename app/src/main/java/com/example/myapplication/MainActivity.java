@@ -3,6 +3,7 @@ package com.example.myapplication;
 import android.Manifest;
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -74,13 +75,22 @@ public class MainActivity extends AppCompatActivity implements ToolsListener {
     }
 
     public void finishPaint(View view) {
+        finish();
     }
 
     public void shareApp(View view) {
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        String bodyText = "http://play.google.com/store/apps/details?id=" + getPackageName();
+        intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name));
+        intent.putExtra(Intent.EXTRA_TEXT, bodyText);
+        startActivity(Intent.createChooser(intent, "share this app"));
     }
 
     public void showFiles(View view) {
+        startActivity(new Intent(this, ListFilesAct.class));
     }
+
 
     public void saveFile(View view) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_DENIED) {
@@ -108,11 +118,10 @@ public class MainActivity extends AppCompatActivity implements ToolsListener {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_PERMISSION && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_DENIED) {
             saveBitmap();
-
         }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
@@ -179,12 +188,15 @@ public class MainActivity extends AppCompatActivity implements ToolsListener {
         final TextView statusSize = view.findViewById(R.id.status_size);
         ImageView ivTools = view.findViewById(R.id.iv_tools);
         SeekBar seekBar = view.findViewById(R.id.seekbar_size);
+
         seekBar.setMax(90);
         if (isEraser) {
+            seekBar.setProgress(mPaintView.getSizeEraser());
             toolsSelected.setText("Eraser Size");
             ivTools.setImageResource(R.drawable.eraser_black);
             statusSize.setText("Selected Size: " + eraserSize);
         } else {
+            seekBar.setProgress(mPaintView.getSizeBrush());
             toolsSelected.setText("Brush Size");
             ivTools.setImageResource(R.drawable.ic_brush_black);
             statusSize.setText("Selected Size : " + brushSize);
@@ -199,25 +211,8 @@ public class MainActivity extends AppCompatActivity implements ToolsListener {
                 } else {
                     brushSize = i + 1;
                     statusSize.setText("Selected Size : " + brushSize);
-                    mPaintView.setSizeEraser(brushSize);
+                    mPaintView.setSizeBrush(brushSize);
                 }
-                seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                    @Override
-                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
-                    }
-
-                    @Override
-                    public void onStartTrackingTouch(SeekBar seekBar) {
-
-                    }
-
-                    @Override
-                    public void onStopTrackingTouch(SeekBar seekBar) {
-
-                    }
-                });
-
             }
 
             @Override

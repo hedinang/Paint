@@ -7,5 +7,6 @@ public class Common {
     public static final String BACKGROUND = "background";
     public static final String RETURN = "return";
 
+    public static final String DELETE = "delete";
 
 }
