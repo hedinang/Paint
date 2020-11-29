@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.myapplication.Interface.ViewOnClick;
 import com.example.myapplication.R;
 import com.example.myapplication.viewHolder.FileViewHolder;
-import com.example.myapplication.widget.ViewFileAct;
+import com.example.myapplication.ViewFileAct;
 
 import java.io.File;
 import java.util.List;
@@ -38,14 +38,10 @@ public class FilesAdabters extends RecyclerView.Adapter<FileViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull FileViewHolder holder, int position) {
         holder.imageView.setImageURI(Uri.fromFile(fileList.get(position)));
-        holder.setViewOnClick(new ViewOnClick() {
-
-            @Override
-            public void onClick(int pos) {
-                Intent intent = new Intent(mContext, ViewFileAct.class);
-                intent.setData(Uri.fromFile(fileList.get(pos)));
-                mContext.startActivity(intent);
-            }
+        holder.setViewOnClick(pos -> {
+            Intent intent = new Intent(mContext, ViewFileAct.class);
+            intent.setData(Uri.fromFile(fileList.get(pos)));
+            mContext.startActivity(intent);
         });
     }
 

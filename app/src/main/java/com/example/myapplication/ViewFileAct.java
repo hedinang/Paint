@@ -1,4 +1,4 @@
-package com.example.myapplication.widget;
+package com.example.myapplication;
 
 import android.content.Intent;
 import android.media.Image;

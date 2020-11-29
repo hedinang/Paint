@@ -5,10 +5,14 @@ import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -17,6 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -35,15 +40,18 @@ import com.flask.colorpicker.builder.ColorPickerDialogBuilder;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements ToolsListener {
     private static final int REQUEST_PERMISSION = 1001;
+    private static final int PICK_IMAGE = 1000;
     PaintView mPaintView;
     int colorBackground, colorBrush;
     int brushSize, eraserSize;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,9 +76,11 @@ public class MainActivity extends AppCompatActivity implements ToolsListener {
         List<ToolsItem> result = new ArrayList<>();
         result.add(new ToolsItem(R.drawable.ic_baseline_brush_24, Common.BRUSH));
         result.add(new ToolsItem(R.drawable.eraser, Common.ERASER));
+        result.add(new ToolsItem(R.drawable.ic_baseline_image_24, Common.IMAGE));
         result.add(new ToolsItem(R.drawable.ic_baseline_palette_24, Common.COLOR));
         result.add(new ToolsItem(R.drawable.background, Common.BACKGROUND));
         result.add(new ToolsItem(R.drawable.ic_baseline_undo_24, Common.RETURN));
+
         return result;
     }
 
@@ -128,7 +138,9 @@ public class MainActivity extends AppCompatActivity implements ToolsListener {
     public void onSelected(String name) {
         switch (name) {
             case Common.BRUSH:
+                mPaintView.toMove = false;
                 mPaintView.disableEraser();
+                mPaintView.invalidate();
                 showDialogSize(false);
                 break;
             case Common.ERASER:
@@ -144,7 +156,32 @@ public class MainActivity extends AppCompatActivity implements ToolsListener {
             case Common.COLOR:
                 updateColor(name);
                 break;
+            case Common.IMAGE:
+                getImage();
+                break;
         }
+    }
+
+    private void getImage() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        startActivityForResult(Intent.createChooser(intent, "Select picture"), PICK_IMAGE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (requestCode == PICK_IMAGE && data != null && resultCode == RESULT_OK) {
+            Uri pickedImage = data.getData();
+            Bitmap bitmap = null;
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), pickedImage);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mPaintView.setImage(bitmap);
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+
     }
 
     private void updateColor(String name) {

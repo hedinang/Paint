@@ -2,8 +2,10 @@ package com.example.myapplication.widget;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
@@ -14,10 +16,12 @@ import android.view.View;
 
 import androidx.annotation.Nullable;
 
+import com.example.myapplication.R;
+
 import java.util.ArrayList;
 
 public class PaintView extends View {
-    Bitmap btmBackground, btmView;
+    Bitmap btmBackground, btmView, image, captureImage, originalImage, rotateImage;
     Paint mPaint = new Paint();
     Path mPath = new Path();
     int colorBackground, sizeBrush, sizeEraser;
@@ -25,6 +29,14 @@ public class PaintView extends View {
     Canvas mCanvas;
     int DIFFERENCE_SPACE = 4;
     ArrayList<Bitmap> listAction = new ArrayList<>();
+    int leftImage = 50, topImage = 50;
+    float refX, refY;
+    public boolean toMove = false;
+    boolean toResize = false;
+    int xCenter, yCenter;
+    float xRotate, yRotate;
+    private int angle = 0;
+
 
     public PaintView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -41,6 +53,12 @@ public class PaintView extends View {
         mPaint.setStrokeCap(Paint.Cap.ROUND);
         mPaint.setStrokeJoin(Paint.Join.ROUND);
         mPaint.setStrokeWidth(toPx(sizeBrush));
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = 2;
+        rotateImage = BitmapFactory.decodeResource(getResources(), R.drawable.rotate, options);
+        rotateImage = Bitmap.createScaledBitmap(rotateImage, 100, 100, true);
+        captureImage = BitmapFactory.decodeResource(getResources(), R.drawable.capture, options);
+        captureImage = Bitmap.createScaledBitmap(captureImage, 200, 200, true);
     }
 
     private float toPx(int sizeBrush) {
@@ -60,7 +78,24 @@ public class PaintView extends View {
         super.onDraw(canvas);
         canvas.drawColor(colorBackground);
         canvas.drawBitmap(btmBackground, 0, 0, null);
+        if (image != null && toMove) {
+            drawImage(canvas);
+//            canvas.drawBitmap(image, leftImage, topImage, null);
+            xCenter = leftImage + image.getWidth() / 2 - captureImage.getWidth() / 2;
+            yCenter = topImage + image.getHeight() / 2 - captureImage.getHeight() / 2;
+            xRotate = leftImage + image.getWidth() + toPx(10);
+            yRotate = topImage - toPx(10);
+            canvas.drawBitmap(rotateImage, xRotate, yRotate, null);
+            canvas.drawBitmap(captureImage, xCenter, yCenter, null);
+        }
         canvas.drawBitmap(btmView, 0, 0, null);
+    }
+
+    private void drawImage(Canvas canvas) {
+        Matrix matrix = new Matrix();
+        matrix.setRotate(angle, image.getWidth() / 2, image.getHeight() / 2);
+        matrix.postTranslate(leftImage, topImage);
+        canvas.drawBitmap(image, matrix, null);
     }
 
     public void setColorBackground(int color) {
@@ -73,9 +108,10 @@ public class PaintView extends View {
         mPaint.setStrokeWidth(sizeBrush);
     }
 
-    public int getSizeBrush(){
+    public int getSizeBrush() {
         return this.sizeBrush;
     }
+
     public void setBrushColor(int color) {
         mPaint.setColor(color);
     }
@@ -85,7 +121,7 @@ public class PaintView extends View {
         mPaint.setStrokeWidth(toPx(sizeEraser));
     }
 
-    public int getSizeEraser(){
+    public int getSizeEraser() {
         return this.sizeEraser;
     }
 
@@ -123,17 +159,78 @@ public class PaintView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 touchStart(x, y);
+                refX = x;
+                refY = y;
+                if (toMove) {
+
+                    if (isToResize(refX, refY)) {
+                        toResize = true;
+                    } else {
+                        toResize = false;
+                    }
+
+                    if ((refX >= xCenter && refX < xCenter + captureImage.getWidth()) && (refY >= yCenter && refY < yCenter + captureImage.getHeight())) {
+                        Canvas newCanvas = new Canvas(btmBackground);
+//                        newCanvas.drawBitmap(image, leftImage, topImage, null);
+                        drawImage(newCanvas);
+                        invalidate();
+
+                    }
+                    if ((refX >= xRotate && refX <= xRotate + rotateImage.getWidth())
+                            && (refY >= yRotate && refY <= yRotate + rotateImage.getHeight())) {
+                        angle += 45;
+                        invalidate();
+                    }
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
-                touchMove(x, y);
+                if (!toMove)
+                    touchMove(x, y);
+                else {
+                    float nX = event.getX();
+                    float nY = event.getY();
+                    if (toResize) {
+                        int xScale = 0;
+                        int yScale = 0;
+                        if (nX > refX) {
+                            xScale = (int) (image.getWidth() + (nX - refX));
+                        } else {
+                            xScale = (int) (image.getWidth() - (refX - nX));
+                        }
+                        if (nY > refY) {
+                            yScale = (int) (image.getHeight() + (nY - refY));
+                        } else {
+                            yScale = (int) (image.getHeight() - (refY - nY));
+                        }
+                        if (xScale > 0 && yScale > 0)
+                            image = Bitmap.createScaledBitmap(originalImage, xScale, yScale, false);
+                    }
+                    leftImage += nX - refX;
+                    topImage += nY - refY;
+                    refX = nX;
+                    refY = nY;
+                    invalidate();
+                }
                 break;
             case MotionEvent.ACTION_UP:
-                touchUp();
-                addLastAction(getBitmap());
+                if (!toMove) {
+                    touchUp();
+                    addLastAction(getBitmap());
+
+                }
                 break;
+
         }
 
         return true;
+    }
+
+    private boolean isToResize(float refX, float refY) {
+        if (refX >= leftImage && refX < leftImage + image.getWidth()
+                && (refY >= topImage && refY <= topImage + 20) || (refY >= topImage + image.getHeight() - 20 && refY <= topImage + image.getHeight())) {
+            return true;
+        }
+        return false;
     }
 
     private void touchUp() {
@@ -164,5 +261,12 @@ public class PaintView extends View {
         Bitmap bitmap = Bitmap.createBitmap(this.getDrawingCache());
         this.setDrawingCacheEnabled(false);
         return bitmap;
+    }
+
+    public void setImage(Bitmap bitmap) {
+        toMove = true;
+        image = Bitmap.createScaledBitmap(bitmap, getWidth() / 2, getHeight() / 2, true);
+        originalImage = image;
+        invalidate();
     }
 }

@@ -18,7 +18,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".ListFilesAct"/>
-        <activity android:name=".widget.ViewFileAct"/>
+        <activity android:name=".ViewFileAct"/>
     </application>
 
 </manifest>

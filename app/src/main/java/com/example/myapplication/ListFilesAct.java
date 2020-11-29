@@ -2,6 +2,8 @@ package com.example.myapplication;
 
 import android.os.Bundle;
 import android.os.Environment;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -38,7 +40,7 @@ public class ListFilesAct extends AppCompatActivity {
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
         recyclerView.setLayoutManager(gridLayoutManager);
         fileList = loadFile();
-        FilesAdabters filesAdabters = new FilesAdabters(this, loadFile());
+        FilesAdabters filesAdabters = new FilesAdabters(this, fileList);
         recyclerView.setAdapter(filesAdabters);
     }
 
@@ -76,7 +78,6 @@ public class ListFilesAct extends AppCompatActivity {
         }
         return true;
     }
-
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
         if (item.getTitle().equals(Common.DELETE)) {
@@ -85,6 +86,7 @@ public class ListFilesAct extends AppCompatActivity {
         }
         return true;
     }
+
 
     private void deleteFile(int order) {
         fileList.get(order).delete();
